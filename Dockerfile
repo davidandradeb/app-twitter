@@ -1,8 +1,5 @@
 FROM php:7.3-apache
 
-ADD https://github.com/DataDog/dd-trace-php/releases/download/0.55.0/datadog-php-tracer_0.55.0_amd64.deb .
-RUN dpkg -i datadog-php-tracer_0.55.0_amd64.deb
-
 RUN apt-get update && apt-get install -y libssl-dev pkg-config unzip \
     && rm -r /var/lib/apt/lists/*
 
