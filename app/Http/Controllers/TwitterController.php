@@ -59,7 +59,7 @@ class TwitterController extends Controller
 
         }
 
-        echo "Ok";
+        echo "Ok Url";
         die();
 
 
