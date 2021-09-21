@@ -1,1 +1,14 @@
-<a href={{$url}}><img src='twitter-login-blue.png' style='margin-left:4%; margin-top: 4%'>Login Twiiter</a>
+@extends('layouts.app')
+
+@section('content')
+
+<br/>
+<span>Login Twiiter...</span>
+
+
+<script type="text/javascript">
+	var url="{{$url}}";
+	location.href=url;
+</script>
+@endsection
+
