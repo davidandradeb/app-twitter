@@ -16,6 +16,11 @@ COPY docker/app.ini $PHP_INI_DIR/conf.d/app.ini
 COPY --from=composer:1.10 /usr/bin/composer /usr/bin/composer
 RUN composer install --prefer-dist --no-progress --no-suggest --no-ansi --no-interaction
 
+# Use the PORT environment variable in Apache configuration files.
+# https://cloud.google.com/run/docs/reference/container-contract#port
+RUN sed -i 's/80/${PORT}/g' /etc/apache2/sites-available/000-default.conf /etc/apache2/ports.conf
+
+
 RUN ln -s $PHP_INI_DIR/php.ini-production $PHP_INI_DIR/php.ini
 RUN mkdir -p bootstrap/cache && chown -R www-data:www-data bootstrap/cache storage
 RUN a2enmod headers rewrite
