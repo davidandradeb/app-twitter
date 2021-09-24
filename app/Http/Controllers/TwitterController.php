@@ -469,14 +469,17 @@ class TwitterController extends Controller
 
                     $apimessage = $this->connection->get("direct_messages/events/show", ['id'=>$existe->id_str_message]);
 
-                    $message_text=($apimessage->event->message_create->message_data->text);
-                    $existe->message=$message_text;
-                    $existe->save();
+                        $message_text=($apimessage->event->message_create->message_data->text);
+                        $existe->message=$message_text;
+                        $existe->message_json=json_encode($mensaje);
+                        $existe->is_new=0;
+                        $existe->save();
 
                 }
                 else{
                     
                     if($existe){
+                         $existe->message_json=json_encode($mensaje);
                          $existe->is_new=0;
                          $existe->save();
 
