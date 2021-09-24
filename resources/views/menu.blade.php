@@ -3,7 +3,7 @@
 
 @section('content')
 
-<a href="/twitter/mensajes/directos">Listar Ultimos Mensajes</a><br/>
-<a href="/twitter/perfil">Listar Perfil</a>
+<a href="/twitter/direct/messages?user_id={{$user->id_str}}&is_new=0">Listar Ultimos Mensajes</a><br/>
+<a href="/profile">Listar Perfil</a>
 
 @endsection

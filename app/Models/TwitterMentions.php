@@ -9,7 +9,9 @@ use Illuminate\Database\Eloquent\Model;
  * @property int $id
  * @property string $id_str_user
  * @property string $id_str_mention
- * @property string $mention
+ * @property string $message
+ * @property string $message_json
+ * @property bool $is_new
  * @property Carbon\Carbon $created_at
  * @property Carbon\Carbon $updated_at
 
@@ -20,7 +22,7 @@ class TwitterMentions extends Model
     /**
      * @var array
      */
-    protected $fillable = ['id', 'id_str_user','id_str_mention','mention'];
+    protected $fillable = ['id', 'id_str_user','id_str_mention','message','message_json','is_new'];
 
     /**
      * Indicates if the model should be timestamped.

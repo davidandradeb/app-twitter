@@ -45,61 +45,33 @@ class TwitterController extends Controller
 
     }
 
-    public function leer_mensajes(Request $request){
+    
+    public function login(){
 
-        //Consultar los usuarios registrados
+        if (!isset($_SESSION['access_token'])) {
 
-        $users=TwitterUsers::all();
-        foreach ($users as $key => $user) {
 
-            $access_token=(array) json_decode($user->access_token);
-            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+        $url_callback=request()->getSchemeAndHttpHost().'/twitter/callback';
 
-            $mensajes=$this->getMensajes();
-            var_dump($mensajes);
+        $request_token = $this->connection->oauth('oauth/request_token', array('oauth_callback' => $url_callback));
+
+      
+        $_SESSION['oauth_token'] = $request_token['oauth_token'];
+        $_SESSION['oauth_token_secret'] = $request_token['oauth_token_secret'];
+        
+        $url = $this->connection->url('oauth/authorize', array('oauth_token' => $request_token['oauth_token']));
+        
+
+        return view('login')->with(['url'=>$url]);
 
         }
-
-        echo "Ok Url";
-        die();
-
-
-    }
-
-    public function leer_mensiones(Request $request){
-       
-        $users=TwitterUsers::all();
-        $mentions=array();
-        foreach ($users as $key => $user) {
-            $id=$user->id_str;
-            $this->connection->setBearer(env('TWITTER_BEARER_TOKEN'));
-            $this->connection->setApiVersion(2);
-            $listmentions = $this->connection->get("users/$id/mentions", ['max_results'=>10]);
-            if(isset($listmentions->errors)){
-
-            }else{
-
-                $mentions=$listmentions->data;
-                foreach ($mentions as $key => $mention) {
-                    $existe=TwitterMentions::where('id_str_mention',$mention->id)->get()->first();
-                    if($existe){
-
-                    }else{
-                        $new_mention=new TwitterMentions();
-                        $new_mention->id_str_user=$id;
-                        $new_mention->id_str_mention=$mention->id;
-                        $new_mention->mention=$mention->text;
-                        $new_mention->save();
-                    }
-                }
-
-            }
+        else{
+            
+            return redirect()->to('/profile');
 
 
-            var_dump($mentions);
-            die();
         }
-
+        
     }
 
     public function oauth_twitter_callback(Request $request){
@@ -131,7 +103,7 @@ class TwitterController extends Controller
         $_SESSION['access_token'] = $access_token;
     
         
-        return redirect()->to('menu');
+        return redirect()->to('/profile');
     
 
       }
@@ -139,41 +111,16 @@ class TwitterController extends Controller
 
     }
 
-    public function login(){
-
-        if (!isset($_SESSION['access_token'])) {
-
-
-        $url_callback=request()->getSchemeAndHttpHost().'/twitter/callback';
-
-        $request_token = $this->connection->oauth('oauth/request_token', array('oauth_callback' => $url_callback));
-
-      
-        $_SESSION['oauth_token'] = $request_token['oauth_token'];
-        $_SESSION['oauth_token_secret'] = $request_token['oauth_token_secret'];
-        
-        $url = $this->connection->url('oauth/authorize', array('oauth_token' => $request_token['oauth_token']));
-        
-
-        return view('login')->with(['url'=>$url]);
-
-        }
-        else{
-            
-            return redirect()->to('/menu');
-
-
-        }
-        
-    }
 
     public function menu(Request $request){
         
-        return view('menu');
+        $user = $this->connection->get("account/verify_credentials", ['include_email' => 'true']);
+     
+        return view('menu')->with(['user'=>$user]);
 
     }
 
-    public function perfil(Request $request){
+    public function profile(Request $request){
 
 
         $user = $this->connection->get("account/verify_credentials", ['include_email' => 'true']);
@@ -215,8 +162,111 @@ class TwitterController extends Controller
 
     }
 
+     public function read_messages(Request $request){
 
-    public function get_mensajes_directos(Request $request){
+        //Consultar los usuarios registrados
+
+        $users=TwitterUsers::all();
+        foreach ($users as $key => $user) {
+
+            $access_token=(array) json_decode($user->access_token);
+            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+
+            $mensajes=$this->getMensajes();
+            var_dump($mensajes);
+
+        }
+
+        echo "Ok Url";
+        die();
+
+
+    }
+
+    public function post_direct_message_create(Request $request){
+
+        $id=$request->get('user_id',0); 
+        $recipient_id=$request->get('recopient_id','');
+        $text=urlencode($request->get('text',"")); 
+
+        if($recipient_id==""){
+            $response=array('titleResponse'=>'Error','textResponse'=>'recipiente id requerida', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario recipiente es requerido'));
+        }
+        if($text==""){
+            $response=array('titleResponse'=>'Error','textResponse'=>'texto requerido', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El texto del mensaje es requerido'));
+        }
+
+        if($id>0 && $recipient_id!=""){
+
+        $twiiter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+       
+        if($twiiter_bd){
+            
+            $access_token=(array) json_decode($twiiter_bd->access_token);
+            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+        
+            
+            $path='direct_messages/events/new';
+            $send_data=array (
+                                  'event' => 
+                                  array (
+                                    'type' => 'message_create',
+                                    'message_create' => 
+                                    array (
+                                      'target' => 
+                                      array (
+                                        'recipient_id' =>$recipient_id,
+                                        'sender_id'=>$twiiter_bd->id_str,
+                                      ),
+                                      'message_data' => 
+                                      array (
+                                        'text' =>$text,
+                                      ),
+                                    ),
+                                  ),
+                                );
+           
+           $message=$this->connection->post($path,$send_data,true);
+
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mensajes creado exitosamente','data'=>$message,'errors'=>[]];
+
+            return new JsonResponse($response,200);
+
+          
+        }else{
+             $response=array('titleResponse'=>'Error','textResponse'=>'usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de usuario no existe en el sistema'));
+
+             return new JsonResponse($response,401);
+
+        }
+     }else{
+
+        if($recipient_id!=""){
+
+            $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido'));
+        }
+       
+       
+     }
+
+        return new Response($response,401);
+
+    }
+
+    public function read_mentions(Request $request){
+       
+        $users=TwitterUsers::all();
+        $mentions=array();
+        foreach ($users as $key => $user) {
+           
+            var_dump($mentions);
+            die();
+        }
+
+    }
+
+
+    public function get_direct_messages(Request $request){
 
         $id=$request->get('user_id',0); 
         $is_new=$request->get('is_new',1); 
@@ -240,13 +290,13 @@ class TwitterController extends Controller
 
           
         }else{
-             $response=array('titleResponse'=>'Error','textResponse'=>'Usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de Usuario no existe en el sistema'));
+             $response=array('titleResponse'=>'Error','textResponse'=>'usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de usuario no existe en el sistema'));
 
              return new JsonResponse($response,401);
 
         }
      }else{
-        $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de Usuario es requerido'));
+        $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido'));
 
         return new Response($response,401);
      }
@@ -254,10 +304,104 @@ class TwitterController extends Controller
 
     }
 
+    public function get_mentions(Request $request){
+
+        $id=$request->get('user_id',0); 
+        $is_new=$request->get('is_new',1); 
+
+        if($id>0){
+
+        $twiiter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+       
+        if($twiiter_bd){
+            
+            $id=$twiiter_bd->id_str;
+            $this->connection->setBearer(env('TWITTER_BEARER_TOKEN'));
+            $this->connection->setApiVersion(2);
+
+            $query=array('expansions'=>'author_id',
+                        'tweet.fields'=>'conversation_id,lang',
+                        'user.fields'=>'created_at,entities',
+                        'max_results'=>100
+            );
+
+
+
+            $listmentions = $this->connection->get("users/$id/mentions", $query);
+            if(isset($listmentions->errors)){
+
+            }else{
+
+                $mentions=$listmentions->data;
+                foreach ($mentions as $key => $mention) {
+                    $existe=TwitterMentions::where('id_str_mention',$mention->id)->get()->first();
+                    if($existe){
+                        $existe->is_new=0;
+                        $existe->message_json=json_encode($mention);
+                        $existe->save();
+                    }else{
+                        $new_mention=new TwitterMentions();
+                        $new_mention->id_str_user=$id;
+                        $new_mention->id_str_mention=$mention->id;
+                        $new_mention->message=$mention->text;
+                        $new_mention->is_new=1;
+                        $new_mention->message_json=json_encode($mention);
+                        $new_mention->save();
+                    }
+                }
+
+            }
+
+            $mensajesDb=TwitterMentions::where('is_new','=',$is_new)->orderBy('id','desc')->get();
+
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mensiones consultados exitosamente','data'=>$mensajesDb,'errors'=>[]];
+
+            return new JsonResponse($response,200);
+
+          
+        }else{
+             $response=array('titleResponse'=>'Error','textResponse'=>'usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de usuario no existe en el sistema'));
+
+             return new JsonResponse($response,401);
+
+        }
+     }else{
+        $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido'));
+
+        return new Response($response,401);
+     }
+
+
+
+    }
+
     public function delete_user(Request $request){
 
         $id=$request->get('user_id',0); 
+        if($id>0){
+        $twitter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+        
+        if($twitter_bd){
+            
+            $twitter_bd->delete();
 
+            $response=['titleResponse'=>'Ok','textResponse'=>'usuario eliminado exitosamente','data'=>[],'errors'=>[]];
+
+            return new JsonResponse($response,200);
+
+          
+        }else{
+
+             $response=array('titleResponse'=>'Error','textResponse'=>'usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de usuario no existe en el sistema'));
+
+             return new JsonResponse($response,401);
+
+        }
+     }else{
+        $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido'));
+
+        return new JsonResponse($response,401);
+     }
 
     }
 
@@ -286,7 +430,7 @@ class TwitterController extends Controller
 
         }
      }else{
-        $response=array('errorCode'=>01,'errorMessage'=>'El id de Usuario es requerido');
+        $response=array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido');
         return new Response($response,401);
      }
 
@@ -343,6 +487,7 @@ class TwitterController extends Controller
                     $msg->id_str_message=$mensaje->id;
                     $msg->type=$mensaje->type;
                     $msg->created_timestamp=$mensaje->created_timestamp;
+                    $msg->message_json=json_encode($mensaje);
                     $msg->is_new=1;
                     $msg->save();
 

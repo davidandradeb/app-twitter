@@ -12,6 +12,8 @@ use Illuminate\Database\Eloquent\Model;
  * @property string $type
  * @property string $created_timestamp
  * @property string $message
+ * @property string $message_json
+ * @property bool $is_new
  * @property Carbon\Carbon $created_at
  * @property Carbon\Carbon $updated_at
 
@@ -22,7 +24,7 @@ class TwitterMessages extends Model
     /**
      * @var array
      */
-    protected $fillable = ['id', 'id_str_user','id_str_message', 'type','created_timestamp','message','is_new'];
+    protected $fillable = ['id', 'id_str_user','id_str_message', 'type','created_timestamp','message','message_json','is_new'];
 
     /**
      * Indicates if the model should be timestamped.
