@@ -22,7 +22,7 @@ class TwitterMessages extends Model
     /**
      * @var array
      */
-    protected $fillable = ['id', 'id_str_user','id_str_message', 'type','created_timestamp','message'];
+    protected $fillable = ['id', 'id_str_user','id_str_message', 'type','created_timestamp','message','is_new'];
 
     /**
      * Indicates if the model should be timestamped.

@@ -22,6 +22,8 @@ $router->get("/twitter/callback","TwitterController@oauth_twitter_callback");
 $router->get("/menu","TwitterController@menu");
 $router->get("/twitter/mensajes/directos","TwitterController@get_mensajes_directos");
 $router->get("/twitter/perfil","TwitterController@perfil");
+$router->get("/twitter/mensajes/recientes","TwitterController@recent_messages");
+
 $router->get("/cron/leer/mensajes","TwitterController@leer_mensajes");
 $router->get("/cron/leer/mensiones","TwitterController@leer_mensiones");
 

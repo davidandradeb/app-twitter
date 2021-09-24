@@ -9,6 +9,7 @@ use TwitterAPIExchange;
 use App\Models\TwitterUsers;
 use App\Models\TwitterMessages;
 use App\Models\TwitterMentions;
+use Illuminate\Http\JsonResponse;
 
 
 class TwitterController extends Controller
@@ -177,6 +178,15 @@ class TwitterController extends Controller
 
         $user = $this->connection->get("account/verify_credentials", ['include_email' => 'true']);
         
+        if(isset($user->errors)){
+            if($user->errors[0]->code==89){
+                unset($_SESSION['access_token']);
+                return redirect()->to('/login');
+
+            }
+        }
+
+
         //Buscamos si existe el usuario y guardamos los tokens que tengamos en sesion de ese usuario
         $twiiter_bd=TwitterUsers::where('id_str','=',$user->id_str)->get()->first();
         if($twiiter_bd){
@@ -208,11 +218,77 @@ class TwitterController extends Controller
 
     public function get_mensajes_directos(Request $request){
 
-        $mensajes=$this->getMensajes();
+        $id=$request->get('user_id',0); 
+        $is_new=$request->get('is_new',1); 
 
-        var_dump($mensajes);
+        if($id>0){
 
-        die();
+        $twiiter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+       
+        if($twiiter_bd){
+            
+            $access_token=(array) json_decode($twiiter_bd->access_token);
+            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+        
+            $mensajes=$this->getMensajes();
+
+            $mensajesDb=TwitterMessages::where('is_new','=',$is_new)->orderBy('created_timestamp','desc')->get();
+
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mensajes consultados exitosamente','data'=>$mensajesDb,'errors'=>[]];
+
+            return new JsonResponse($response,200);
+
+          
+        }else{
+             $response=array('titleResponse'=>'Error','textResponse'=>'Usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de Usuario no existe en el sistema'));
+
+             return new JsonResponse($response,401);
+
+        }
+     }else{
+        $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de Usuario es requerido'));
+
+        return new Response($response,401);
+     }
+
+
+    }
+
+    public function delete_user(Request $request){
+
+        $id=$request->get('user_id',0); 
+
+
+    }
+
+    public function recent_messages(Request $request){
+     
+     $id=$request->get('user_id',0); 
+
+     if($id>0){
+
+        $twiiter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+        if($twiiter_bd){
+            
+            $access_token=(array) json_decode($twiiter_bd->access_token);
+            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+
+            //$this->connection->setApiVersion(2);
+
+            $params=$_GET;// All parameters
+            unset($params['id']);
+            $recent = $this->connection->get("statuses/user_timeline",$params);
+
+            var_dump($recent);
+            die();
+
+        }else{
+
+        }
+     }else{
+        $response=array('errorCode'=>01,'errorMessage'=>'El id de Usuario es requerido');
+        return new Response($response,401);
+     }
 
 
     }
@@ -257,7 +333,8 @@ class TwitterController extends Controller
                 else{
                     
                     if($existe){
-
+                         $existe->is_new=0;
+                         $existe->save();
 
                     }else{
 
@@ -266,12 +343,12 @@ class TwitterController extends Controller
                     $msg->id_str_message=$mensaje->id;
                     $msg->type=$mensaje->type;
                     $msg->created_timestamp=$mensaje->created_timestamp;
+                    $msg->is_new=1;
                     $msg->save();
 
 
                      $apimessage = $this->connection->get("direct_messages/events/show", ['id'=>$msg->id_str_message]);
-                     var_dump($apimessage);
-                     die();
+                     
                     $message_text=($apimessage->event->message_create->message_data->text);
                     $msg->message=$message_text;
                     $msg->save();
