@@ -120,6 +120,15 @@ class TwitterController extends Controller
 
     }
 
+    public function get_users(Request $request){
+
+        $users=TwitterUsers::all();
+        $response=array('titleResponse'=>'Ok','textResponse'=>'Usuarios consultados exitosamente', 'errors'=>array(),'data'=>$users);
+
+        return new JsonResponse($response,200);
+
+    }
+
     public function profile(Request $request){
 
 

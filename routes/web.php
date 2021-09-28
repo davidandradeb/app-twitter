@@ -29,6 +29,8 @@ $router->group(
     ['middleware' => 'auth'],
     function () use ($router) {
 
+    $router->post("/twitter/users","TwitterController@get_users");
+
    	$router->get("/twitter/recent/messages","TwitterController@recent_messages");
 	$router->post("/twitter/recent/messages","TwitterController@recent_messages");
 
