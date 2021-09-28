@@ -199,10 +199,10 @@ class TwitterController extends Controller
         $text=urlencode($request->get('text',"")); 
 
         if($recipient_id==""){
-            $response=array('titleResponse'=>'Error','textResponse'=>'recipiente id error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario recipiente es requerido'));
+            $response=array('titleResponse'=>'Error','textResponse'=>'recipiente_id error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El campo recipiente_id es requerido'));
         }
         if($text==""){
-            $response=array('titleResponse'=>'Error','textResponse'=>'texto requerido', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El texto del mensaje es requerido'));
+            $response=array('titleResponse'=>'Error','textResponse'=>'text error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El campo text es requerido'));
         }
 
         if($id>0 && $recipient_id!=""){
@@ -237,7 +237,7 @@ class TwitterController extends Controller
            
            $message=$this->connection->post($path,$send_data,true);
 
-            $response=['titleResponse'=>'Ok','textResponse'=>'Mensajes creado exitosamente','data'=>$message,'errors'=>[]];
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mensaje creado exitosamente','data'=>$message,'errors'=>[]];
 
             return new JsonResponse($response,200);
 
@@ -363,7 +363,7 @@ class TwitterController extends Controller
 
             $mensajesDb=TwitterMentions::where('is_new','=',$is_new)->orderBy('id','desc')->get();
 
-            $response=['titleResponse'=>'Ok','textResponse'=>'Mensiones consultados exitosamente','data'=>$mensajesDb,'errors'=>[]];
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mensiones consultadas exitosamente','data'=>$mensajesDb,'errors'=>[]];
 
             return new JsonResponse($response,200);
 
