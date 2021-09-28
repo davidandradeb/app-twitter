@@ -46,7 +46,7 @@ footer{
 
 <footer class="footer mt-auto py-3 bg-light">
   <div class="container">
-    <span class="text-muted">Place sticky footer content here.</span>
+    <span class="text-muted">Dyalogo-App-Twitter <?php echo date('Y-m-d H:i:s') ?></span>
   </div>
 </footer>
 
