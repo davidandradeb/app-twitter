@@ -195,11 +195,11 @@ class TwitterController extends Controller
     public function post_direct_message_create(Request $request){
 
         $id=$request->get('user_id',0); 
-        $recipient_id=$request->get('recopient_id','');
+        $recipient_id=$request->get('recipient_id','');
         $text=urlencode($request->get('text',"")); 
 
         if($recipient_id==""){
-            $response=array('titleResponse'=>'Error','textResponse'=>'recipiente id requerida', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario recipiente es requerido'));
+            $response=array('titleResponse'=>'Error','textResponse'=>'recipiente id error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario recipiente es requerido'));
         }
         if($text==""){
             $response=array('titleResponse'=>'Error','textResponse'=>'texto requerido', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El texto del mensaje es requerido'));
@@ -262,18 +262,6 @@ class TwitterController extends Controller
 
     }
 
-    public function read_mentions(Request $request){
-       
-        $users=TwitterUsers::all();
-        $mentions=array();
-        foreach ($users as $key => $user) {
-           
-            var_dump($mentions);
-            die();
-        }
-
-    }
-
 
     public function get_direct_messages(Request $request){
 
@@ -310,6 +298,18 @@ class TwitterController extends Controller
         return new Response($response,401);
      }
 
+
+    }
+
+    public function read_mentions(Request $request){
+       
+        $users=TwitterUsers::all();
+        $mentions=array();
+        foreach ($users as $key => $user) {
+           
+            var_dump($mentions);
+            die();
+        }
 
     }
 
@@ -379,6 +379,74 @@ class TwitterController extends Controller
 
         return new Response($response,401);
      }
+
+
+
+    }
+
+
+    public function mention_response(Request $request){
+
+        $id=$request->get('user_id',0); 
+        $conversation_id=$request->get('conversation_id','');
+        $text=urlencode($request->get('text',"")); 
+
+        if($conversation_id==""){
+            $response=array('titleResponse'=>'Error','textResponse'=>'conversation_id error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El campo conversation_id es requerido'));
+        }
+        if($text==""){
+            $response=array('titleResponse'=>'Error','textResponse'=>'text error', 'errors'=>array('errorCode'=>01,'errorMessage'=>'El campo text es requerido'));
+        }
+
+
+        if($id>0 && $conversation_id!=""){
+
+            $twitter_bd=TwitterUsers::where('id_str','=',$id)->get()->first();
+       
+        if($twitter_bd){
+            
+            $access_token=(array) json_decode($twitter_bd->access_token);
+            $this->connection = new TwitterOAuth(env('TWITTER_CONSUMER_KEY'), env('TWITTER_CONSUMER_SECRET'), $access_token['oauth_token'], $access_token['oauth_token_secret']);
+
+
+
+            //Necesito sacarme el username del que me menciono con el conversation_id
+            $twitter_data=$this->connection->get('statuses/show',['id'=>$conversation_id]);
+            
+            $username="@".($twitter_data->user->screen_name);
+            $text=$username.' '.$text;
+            
+            $path='statuses/update';
+            $send_data=array (
+                                  'in_reply_to_status_id' => $conversation_id,
+                                  'status'=>$text
+                                );
+           
+           $message=$this->connection->post($path,$send_data);
+
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mension respondida exitosamente','data'=>$message,'errors'=>[]];
+
+            return new JsonResponse($response,200);
+
+          
+        }else{
+             $response=array('titleResponse'=>'Error','textResponse'=>'usuario no existe', 'errors'=>array('errorCode'=>02,'errorMessage'=>'El id de usuario no existe en el sistema'));
+
+             return new JsonResponse($response,401);
+
+        }
+     }else{
+
+        if($recipient_id!=""){
+
+            $response=array('errors'=>array('errorCode'=>01,'errorMessage'=>'El id de usuario es requerido'));
+        }
+       
+       
+     }
+
+        return new Response($response,401);
+
 
 
 

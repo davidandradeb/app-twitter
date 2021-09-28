@@ -42,6 +42,10 @@ $router->group(
 	
 	$router->get("/twitter/recent/mentions","TwitterController@get_mentions");
 	$router->post("/twitter/recent/mentions","TwitterController@get_mentions");
+	$router->post("/twitter/mention/response","TwitterController@mention_response");
+
+	$router->post("/twitter/mention/response","TwitterController@mention_response");
+
 	
 	$router->get("/twitter/delete/user","TwitterController@delete_user");
 	$router->post("/twitter/delete/user","TwitterController@delete_user");
