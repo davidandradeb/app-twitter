@@ -347,6 +347,7 @@ class TwitterController extends Controller
                     if($existe){
                         $existe->is_new=0;
                         $existe->message_json=json_encode($mention);
+                        $existe->message=$mention->text;
                         $existe->save();
                     }else{
                         $new_mention=new TwitterMentions();
