@@ -364,7 +364,7 @@ class TwitterController extends Controller
 
             $mensajesDb=TwitterMentions::where('is_new','=',$is_new)->orderBy('id','desc')->get();
 
-            $response=['titleResponse'=>'Ok','textResponse'=>'Mensiones consultadas exitosamente','data'=>$mensajesDb,'errors'=>[]];
+            $response=['titleResponse'=>'Ok','textResponse'=>'Menciones consultadas exitosamente','data'=>$mensajesDb,'errors'=>[]];
 
             return new JsonResponse($response,200);
 
@@ -425,7 +425,7 @@ class TwitterController extends Controller
            
            $message=$this->connection->post($path,$send_data);
 
-            $response=['titleResponse'=>'Ok','textResponse'=>'Mension respondida exitosamente','data'=>$message,'errors'=>[]];
+            $response=['titleResponse'=>'Ok','textResponse'=>'Mención respondida exitosamente','data'=>$message,'errors'=>[]];
 
             return new JsonResponse($response,200);
 
